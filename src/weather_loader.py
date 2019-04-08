@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import csv
-from sklearn.model_selection import train_test_split
+import numpy as np
 
 # Ранжируем облачность на группы
 dictionary_Nh = {
@@ -72,7 +72,8 @@ def get_training_tuple(Nh, Cl, T, U, RRR):
     group_T = get_group_T(T)
     group_U = get_group_U(U)
 
-    values = (group_Nh, group_Cl, group_T, group_U)
+    values = np.array([group_Nh, group_Cl, group_T, group_U])
+
     rain = get_rainfall_RRR_value(RRR)
     return values, rain
 
@@ -92,17 +93,23 @@ def load_file():
                 feat, predict = get_training_tuple(row[17], row[16], row[1], row[5], row[23])
                 feats.append(feat)
                 predicts.append(predict)
+        feats = np.array(feats)
+        predicts = np.array(predicts)
+        return feats, predicts
 
-    return feats, predicts
-
-# Получаем тестовые и обучающие массивы
-
+def vectorized_result(j):
+    e = np.zeros((2, 1))
+    e[j] = 1.0
+    return e
 
 def get_x_y_train():
     feats, predicts = load_file()
-    x_train, x_test, y_train, y_test = train_test_split(feats, predicts,
-                                                        test_size=0.3,
-                                                        random_state=2)
-    return x_train, y_train
+    training_inputs = [np.reshape(x, (4, 1)) for x in feats]
+    training_results = [vectorized_result(y) for y in predicts]
 
-print(get_x_y_train())
+    training_data = zip(training_inputs, training_results)
+
+    test_inputs = [np.reshape(x, (4, 1)) for x in feats]
+    test_data = zip(test_inputs, predicts)
+
+    return training_data, test_data
